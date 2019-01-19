@@ -1,0 +1,34 @@
+version: '3.2'
+services:
+  collectd:
+    build:
+      context: './collectd/'
+    privileged: true
+    network_mode: host
+    volumes:
+      - /proc:/mnt/proc:ro
+      - ./collectd/collectd.conf:/etc/collectd/collectd.conf
+    container_name: collectd
+      
+  influxdb:
+    build:
+      context: './influxdb_conf/'
+    depends_on:
+      - collectd
+    ports:
+      - "8083:8083"
+      - "8086:8086"
+      - "25826:25826/udp"
+    volumes:
+      - ./influxdb/:/var/lib/influxdb/
+      - ./influxdb_conf/influxdb.conf:/etc/influxdb/influxdb.conf
+      - ./influxdb_conf/types.db:/usr/share/collectd/types.db:ro
+    container_name: influxdb
+    
+  grafana:
+    image: grafana/grafana:3.1.1
+    ports:
+      - "3000:3000"
+    links:
+      - "influxdb"
+    container_name: grafana
